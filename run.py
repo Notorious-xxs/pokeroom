@@ -1,8 +1,12 @@
-# 创建应用实例
+# 腾讯云托管启动入口
 import sys
+import os
 
-from wxcloudrun import app
+# 从 app.py 导入 Flask 应用实例
+sys.path.insert(0, os.path.dirname(__file__))
+from app import app as flask_app
 
-# 启动Flask Web服务
 if __name__ == '__main__':
-    app.run(host=sys.argv[1], port=sys.argv[2])
+    port = int(os.environ.get('PORT', 8080))
+    print(f"🚀 Starting Flask on port {port}")
+    flask_app.run(host='0.0.0.0', port=port, debug=False)
