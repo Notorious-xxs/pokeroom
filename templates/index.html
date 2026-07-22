@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poker Room - 德州扑克 · 麻将</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+/* ===== 基础重置 ===== */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* ===== 色彩定义 ===== */
+:root {
+    --clr-page-bg: #040816;
+    --clr-gold: #f59e0b;
+    --clr-gold-deep: #d97706;
+    --clr-green: #22c55e;
+    --clr-green-deep: #16a34a;
+    --clr-emerald: #059669;
+    --clr-jade: #065f46;
+    --clr-amber: #fbbf24;
+    --clr-text-main: #ffffff;
+    --clr-text-secondary: #94a3b8;
+    --clr-text-muted: #64748b;
+    --clr-text-body: #cbd5e1;
+    --glass-bg: rgba(10, 16, 32, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 页面主体 ===== */
+body {
+    background:
+        radial-gradient(ellipse at 25% 75%, rgba(22, 163, 74, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 25%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(30, 41, 59, 0.40) 0%, transparent 60%),
+        var(--clr-page-bg);
+    color: var(--clr-text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* 桌布编织纹理 */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.006) 2px, rgba(255,255,255,0.006) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.006) 2px, rgba(255,255,255,0.006) 4px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ===== 背景浮动装饰 ===== */
+.bg-decor {
+    position: fixed;
+    pointer-events: none;
+    z-index: -2;
+    opacity: 0.16;
+}
+
+/* 左上：扑克花色 */
+.bg-decor--cards {
+    top: 40px;
+    left: -80px;
+    width: 300px;
+    height: 400px;
+    animation: driftCards 15s ease-in-out infinite;
+}
+
+.bg-decor__item {
+    position: absolute;
+    font-size: 64px;
+    color: var(--clr-green-deep);
+}
+
+.bg-decor__item:nth-child(1) {
+    top: 0; left: 30px;
+    color: #15803d;
+    transform: rotate(-20deg);
+    font-size: 80px;
+}
+.bg-decor__item:nth-child(2) {
+    top: 120px; left: 120px;
+    color: var(--clr-gold-deep);
+    transform: rotate(14deg);
+    font-size: 52px;
+}
+.bg-decor__item:nth-child(3) {
+    top: 240px; left: 50px;
+    color: #16a34a;
+    transform: rotate(-10deg);
+    font-size: 44px;
+}
+.bg-decor__item:nth-child(4) {
+    top: 160px; left: -10px;
+    color: var(--clr-amber);
+    transform: rotate(24deg);
+    font-size: 38px;
+}
+
+/* 右下：麻将牌面 */
+.bg-decor--tiles {
+    bottom: 20px;
+    right: -60px;
+    width: 320px;
+    height: 340px;
+    animation: driftTiles 18s ease-in-out infinite;
+}
+
+.bg-decor__tile {
+    position: absolute;
+    width: 56px;
+    height: 76px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 900;
+    border: 2px solid;
+}
+
+.bg-decor__tile:nth-child(1) {
+    top: 10px; right: 50px;
+    background: rgba(6, 95, 70, 0.30);
+    border-color: rgba(6, 95, 70, 0.45);
+    color: #a7f3d0;
+    transform: rotate(12deg);
+}
+.bg-decor__tile:nth-child(2) {
+    top: 100px; right: 160px;
+    background: rgba(180, 140, 60, 0.22);
+    border-color: rgba(180, 140, 60, 0.40);
+    color: #fde68a;
+    transform: rotate(-14deg);
+    width: 50px;
+    height: 68px;
+    font-size: 24px;
+}
+.bg-decor__tile:nth-child(3) {
+    top: 200px; right: 70px;
+    background: rgba(22, 163, 74, 0.25);
+    border-color: rgba(22, 163, 74, 0.45);
+    color: #86efac;
+    transform: rotate(8deg);
+    width: 48px;
+    height: 64px;
+    font-size: 22px;
+}
+.bg-decor__tile:nth-child(4) {
+    top: 140px; right: 0;
+    background: rgba(133, 77, 14, 0.22);
+    border-color: rgba(133, 77, 14, 0.40);
+    color: #fcd34d;
+    transform: rotate(-20deg);
+    width: 52px;
+    height: 70px;
+    font-size: 24px;
+}
+
+@keyframes driftCards {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(2deg); }
+}
+@keyframes driftTiles {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(16px) rotate(-3deg); }
+}
+
+/* ===== 主容器 ===== */
+.page-wrapper {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 20px 55px;
+}
+
+/* ===== 顶栏 ===== */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #16a34a, #f59e0b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 12px 36px rgba(22, 163, 74, 0.30);
+}
+
+.logo-text h2 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.logo-text p {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--clr-text-secondary);
+}
+
+.top-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.live-indicator {
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(20px);
+    color: #dbeafe;
+    font-size: 13px;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 12px #22c55e;
+}
+
+/* ===== 主视觉区 ===== */
+.hero-section {
+    text-align: center;
+    margin-bottom: 36px;
+    padding: 0 10px;
+}
+
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(22, 163, 74, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.24);
+    color: #bbf7d0;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    backdrop-filter: blur(20px);
+}
+
+.hero-section h1 {
+    font-size: clamp(30px, 6.5vw, 64px);
+    line-height: 1.2;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    background: linear-gradient(to right, #ffffff, #86efac, #fcd34d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-section p {
+    margin-top: 16px;
+    color: var(--clr-text-body);
+    font-size: clamp(14px, 2vw, 18px);
+    line-height: 1.6;
+}
+
+/* ===== 双列卡片 ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 12px;
+}
+
+.game-card {
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px 20px;
+    overflow: hidden;
+    backdrop-filter: blur(24px);
+    transition: transform 0.4s, border-color 0.4s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.game-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.game-card:active {
+    transform: scale(0.98);
+}
+
+/* 每张卡片顶部光晕 */
+.game-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.14;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.game-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.game-card--poker::before {
+    background: radial-gradient(circle at top, rgba(22, 163, 74, 0.52), transparent 55%);
+}
+
+.game-card--mahjong::before {
+    background: radial-gradient(circle at top, rgba(245, 158, 11, 0.52), transparent 55%);
+}
+
+.card-header {
+    margin-bottom: 18px;
+}
+
+.card-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 18px;
+    color: #fff;
+}
+
+.card-icon--poker {
+    background: linear-gradient(135deg, #16a34a, #854d0e);
+    box-shadow: 0 12px 30px rgba(22, 163, 74, 0.25);
+}
+
+.card-icon--mahjong {
+    background: linear-gradient(135deg, #065f46, #854d0e);
+    box-shadow: 0 12px 30px rgba(6, 95, 70, 0.30);
+}
+
+.game-card h2 {
+    font-size: 26px;
+    margin-bottom: 10px;
+    font-weight: 800;
+}
+
+.card-desc {
+    color: var(--clr-text-body);
+    line-height: 1.6;
+    font-size: 14px;
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+/* ===== 页脚 ===== */
+.site-footer {
+    text-align: center;
+    color: var(--clr-text-muted);
+    line-height: 2.1;
+    font-size: 14px;
+    padding-bottom: 20px;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 700px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+    .top-bar {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .top-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    .live-indicator {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- 背景装饰：左上扑克花色 -->
+<div class="bg-decor bg-decor--cards">
+    <div class="bg-decor__item"><i class="fa-solid fa-spade-suit"></i></div>
+    <div class="bg-decor__item"><i class="fa-solid fa-heart"></i></div>
+    <div class="bg-decor__item"><i class="fa-solid fa-diamond"></i></div>
+    <div class="bg-decor__item"><i class="fa-solid fa-clover"></i></div>
+</div>
+
+<!-- 背景装饰：右下麻将牌 -->
+<div class="bg-decor bg-decor--tiles">
+    <div class="bg-decor__tile">東</div>
+    <div class="bg-decor__tile">發</div>
+    <div class="bg-decor__tile">白</div>
+    <div class="bg-decor__tile">中</div>
+</div>
+
+<div class="page-wrapper">
+
+    <!-- 顶栏 -->
+    <div class="top-bar">
+        <div class="logo-area">
+            <div class="logo-icon">
+                <i class="fa-solid fa-spade-suit"></i>
+            </div>
+            <div class="logo-text">
+                <h2>Poker Room</h2>
+                <p>免费 · 娱乐 · 自由</p>
+            </div>
+        </div>
+        <div class="top-right">
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                服务状态：正常
+            </div>
+        </div>
+    </div>
+
+    <!-- 主视觉 -->
+    <div class="hero-section">
+        <h1>牌桌之上 自由畅通</h1>
+    </div>
+
+    <!-- 双列游戏卡片 -->
+    <div class="main-grid">
+
+        <!-- 德州扑克 -->
+        <a href="poker" class="game-card game-card--poker" style="text-decoration:none;">
+            <div class="card-header">
+                <div class="card-icon card-icon--poker">
+                    <div>📸</div>
+                </div>
+                <h2>胜率分析</h2>
+                <div class="card-desc">
+                    支持手动选牌<br>
+                    支持拍照识别<br>
+                    支持胜率计算<br>
+					支持牌型分析
+                </div>
+            </div>
+        </a>
+
+        <!-- 麻将 -->
+        <a href="/rank" class="game-card game-card--mahjong" style="text-decoration:none;">
+            <div class="card-header">
+                <div class="card-icon card-icon--mahjong">
+                    <div>🃏</div>
+                </div>
+                <h2>起手牌排名</h2>
+                <div class="card-desc">
+                    翻前手牌价值评估<br>
+                    支持 夯 / 顶级 / 人上人<br>
+                    快速查看起手牌强弱
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- 页脚 -->
+    <div class="site-footer">
+        © 2026 Poker Room<br>
+        免费订阅 · 公益共享 · 长期维护<br>
+        仅供娱乐技术交流使用<br>
+        请遵守当地法律法规
+    </div>
+
+</div>
+
+</body>
+</html>

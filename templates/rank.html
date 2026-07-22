@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>德州起手牌排名</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --clr-page-bg: #040816;
+            --clr-text-main: #ffffff;
+            --clr-text-secondary: #94a3b8;
+            --clr-text-muted: #64748b;
+            --glass-bg: rgba(10, 16, 32, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --tier-solid: #8B0000;
+            --tier-top: #D63031;
+            --tier-elite: #E17055;
+            --tier-npc: #00B894;
+            --tier-trash: #FDCB6E;
+            --tier-dog: #74B9FF;
+        }
+        body {
+            background: radial-gradient(ellipse at 25% 75%, rgba(22,163,74,0.10) 0%, transparent 55%), radial-gradient(ellipse at 75% 25%, rgba(245,158,11,0.08) 0%, transparent 50%), radial-gradient(ellipse at 50% 0%, rgba(30,41,59,0.40) 0%, transparent 60%), var(--clr-page-bg);
+            color: var(--clr-text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden; min-height: 100vh;
+        }
+        body::after {
+            content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.004) 2px, rgba(255,255,255,0.004) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.004) 2px, rgba(255,255,255,0.004) 4px);
+        }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--clr-text-secondary); text-decoration: none; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); transition: background 0.2s, color 0.2s; margin: 20px 0 10px; }
+        .back-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .container { width: 100%; max-width: 560px; margin: 0 auto; padding: 10px 16px 40px; }
+        .header { text-align: center; padding: 10px 0 20px; }
+        .header h1 { font-size: clamp(24px, 5vw, 32px); font-weight: 900; letter-spacing: 1px; }
+        .header h1 span:first-child { color: #fff; }
+        .header h1 span:last-child { background: linear-gradient(135deg, #e74c3c, #f39c12); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--clr-text-secondary); font-size: 13px; margin-top: 6px; }
+        .legend { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; padding: 12px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; backdrop-filter: blur(20px); }
+        .legend-btn { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 10px; border-radius: 10px; border: 1px solid transparent; transition: all 0.2s ease; user-select: none; background: transparent; color: inherit; width: 100%; text-align: left; }
+        .legend-btn:hover { background: rgba(255,255,255,0.05); }
+        .legend-btn.active { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); }
+        .legend-btn.active .legend-dot { box-shadow: 0 0 12px currentColor; transform: scale(1.2); }
+        .legend-dot { width: 18px; height: 18px; border-radius: 6px; flex-shrink: 0; transition: all 0.2s ease; }
+        .legend-label { flex: 1; }
+        .legend-desc { color: var(--clr-text-muted); font-size: 11px; font-weight: 400; }
+        .legend-count { font-size: 11px; color: var(--clr-text-muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 99px; }
+        .rank-table-wrapper { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 16px 12px 20px; backdrop-filter: blur(20px); overflow-x: auto; }
+        .rank-table { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; min-width: 340px; margin: 0 auto; }
+        .cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: clamp(9px, 2.2vw, 12px); font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); position: relative; cursor: default; transition: all 0.25s ease; letter-spacing: -0.3px; border: 1px solid rgba(255,255,255,0.1); }
+        .cell:hover:not(.dimmed) { transform: scale(1.15); z-index: 2; }
+        .cell.diagonal { font-weight: 800; font-size: clamp(10px, 2.4vw, 13px); }
+        .cell.dimmed { opacity: 0.15; filter: grayscale(100%); transform: scale(0.9); }
+        .tier-solid { background: var(--tier-solid); }
+        .tier-top { background: var(--tier-top); }
+        .tier-elite { background: var(--tier-elite); }
+        .tier-npc { background: var(--tier-npc); }
+        .tier-trash { background: var(--tier-trash); color: #1a1a2e; }
+        .tier-dog { background: var(--tier-dog); }
+        .footer-note { text-align: center; color: var(--clr-text-muted); font-size: 11px; margin-top: 16px; line-height: 1.6; }
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #0f172a; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px 32px; min-width: 340px; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .modal-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 20px; text-align: center; }
+        .modal-title span { color: var(--tier-elite); }
+        .modal-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+        .modal-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: all 0.2s ease; background: rgba(255,255,255,0.03); font-size: 14px; font-weight: 600; color: #e2e8f0; }
+        .modal-option:hover { background: rgba(255,255,255,0.08); }
+        .modal-option.selected { border-color: currentColor; background: rgba(255,255,255,0.08); }
+        .modal-option .dot { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s ease; }
+        .btn-save { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+        .btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-cancel { background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1) !important; }
+        .btn-cancel:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        @media (max-width: 400px) { .container { padding: 10px 10px 30px; } .rank-table { gap: 2px; } .legend { padding: 10px; } .modal-box { min-width: 280px; padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/index" class="back-link"><i class="fa-solid fa-arrow-left"></i> 返回</a>
+    <div class="header">
+        <h1><span>德州起手牌</span> <span>排名</span></h1>
+        <p>点击左侧等级可高亮筛选 · 再次点击恢复全显</p>
+    </div>
+    <div class="legend" id="legend">
+        <button class="legend-btn" data-tier="solid"><div class="legend-dot" style="background:#8B0000;"></div><span class="legend-label">夯 <span class="legend-desc">· 必打</span></span><span class="legend-count" id="count-solid"></span></button>
+        <button class="legend-btn" data-tier="top"><div class="legend-dot" style="background:#D63031;"></div><span class="legend-label">顶级 <span class="legend-desc">· 强牌范围</span></span><span class="legend-count" id="count-top"></span></button>
+        <button class="legend-btn" data-tier="elite"><div class="legend-dot" style="background:#E17055;"></div><span class="legend-label">人上人 <span class="legend-desc">· 可打</span></span><span class="legend-count" id="count-elite"></span></button>
+        <button class="legend-btn" data-tier="npc"><div class="legend-dot" style="background:#00B894;"></div><span class="legend-label">NPC <span class="legend-desc">· 一般</span></span><span class="legend-count" id="count-npc"></span></button>
+        <button class="legend-btn" data-tier="trash"><div class="legend-dot" style="background:#FDCB6E;"></div><span class="legend-label">拉完了 <span class="legend-desc">· 不推荐</span></span><span class="legend-count" id="count-trash"></span></button>
+        <button class="legend-btn" data-tier="dog"><div class="legend-dot" style="background:#74B9FF;"></div><span class="legend-label">狗都不玩 <span class="legend-desc">· 放弃</span></span><span class="legend-count" id="count-dog"></span></button>
+    </div>
+    <div class="rank-table-wrapper"><div class="rank-table" id="rankTable"></div></div>
+    <div class="footer-note">
+        <p>▲ 上方 = 同花 (suited) &nbsp;|&nbsp; ● 对角 = 口袋对子 &nbsp;|&nbsp; ▼ 下方 = 不同花 (offsuit)</p>
+        <p style="margin-top:4px;">数据基于 GTO 基础策略与常见位置统计</p>
+    </div>
+</div>
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <div class="modal-title">编辑手牌：<span id="modalHand"></span></div>
+        <div class="modal-options" id="modalOptions"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="btnCancel">取消</button>
+            <button class="btn-save" id="btnSave">保存</button>
+        </div>
+    </div>
+</div>
+<script>
+const RANKS = ["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
+
+const tierMap = {
+    "solid": ["AA", "AKs", "AKo", "KK", "QQ"],
+    "top": ["AQs", "AQo", "KQs", "KQo", "AJs", "JJ", "TT"],
+    "elite": ["ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "KJs", "QJs", "KTs", "AJo", "KJo", "QJo", "99", "88"],
+    "npc": ["ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "KTo", "QTo", "JTo", "K9s", "QTs", "Q9s", "JTs", "J9s", "T9s", "T8s", "98s", "87s", "77", "76s", "66", "65s", "55", "44", "33", "22"],
+    "trash": ["A4o", "A2o", "A3o", "K9o", "Q9o", "J9o", "T9o", "j8o", "T8o", "98o", "97o", "87o", "86o", "76o", "65o", "K8s", "Q8s", "J8s", "T7s", "97s", "96s", "86s", "75s", "64s", "54s", "43s"],
+};
+
+// Reverse lookup: hand -> tier (unlisted hands default to "dog")
+const handToTier = {};
+for (const tier in tierMap) {
+    tierMap[tier].forEach(function(hand) { handToTier[hand] = tier; });
+}
+
+// Counts — dog computed from unlisted hands
+const counts = {};
+for (const tier in tierMap) { counts[tier] = tierMap[tier].length; }
+counts["dog"] = 0;
+for (let i = 0; i < 13; i++) {
+    for (let j = 0; j < 13; j++) {
+        var h;
+        if (i === j) h = RANKS[i] + RANKS[i];
+        else { var bk = sortedHandKey(RANKS[i], RANKS[j]); h = bk + ((j > i) ? "s" : "o"); }
+        if (!handToTier[h]) counts["dog"]++;
+    }
+}
+function sortedHandKey(r1, r2) {
+    if (r1 === r2) return r1 + r2;
+    const idx1 = RANKS.indexOf(r1), idx2 = RANKS.indexOf(r2);
+    return idx1 <= idx2 ? r1 + r2 : r2 + r1;
+}
+function getTier(hand) {
+    return handToTier[hand] || "dog";
+}
+function renderTable() {
+    const table = document.getElementById("rankTable"); table.innerHTML = "";
+    for (let i = 0; i < 13; i++) {
+        for (let j = 0; j < 13; j++) {
+            const cell = document.createElement("div"); let hand, tier;
+            if (j === i) { hand = RANKS[i] + RANKS[i]; tier = getTier(hand); cell.className = "cell diagonal tier-" + tier; cell.textContent = hand; }
+            else { const baseKey = sortedHandKey(RANKS[i], RANKS[j]); const suffix = (j > i) ? "s" : "o"; hand = baseKey + suffix; tier = getTier(hand); cell.className = "cell tier-" + tier; cell.textContent = hand; }
+            cell.dataset.tier = tier; cell.dataset.hand = hand;
+            cell.style.cursor = "pointer";
+            cell.addEventListener("click", function() { openEditModal(hand, tier); });
+            table.appendChild(cell);
+        }
+    }
+    for (const tier of ["solid","top","elite","npc","trash","dog"]) { const el = document.getElementById("count-" + tier); if (el) el.textContent = counts[tier] || 0; }
+}
+let activeTier = null;
+document.getElementById("legend").addEventListener("click", function(e) {
+    const btn = e.target.closest(".legend-btn"); if (!btn) return;
+    const tier = btn.dataset.tier;
+    if (activeTier === tier) { activeTier = null; document.querySelectorAll(".legend-btn").forEach(function(b){b.classList.remove("active")}); document.querySelectorAll(".cell").forEach(function(c){c.classList.remove("dimmed")}); return; }
+    activeTier = tier;
+    document.querySelectorAll(".legend-btn").forEach(function(b){b.classList.remove("active")});
+    btn.classList.add("active");
+    document.querySelectorAll(".cell").forEach(function(c) { if (c.dataset.tier === tier) c.classList.remove("dimmed"); else c.classList.add("dimmed"); });
+});
+
+// Edit modal
+var currentEditHand = null;
+var currentEditTier = null;
+var selectedTier = null;
+var tierColors = {"solid":"#8B0000","top":"#D63031","elite":"#E17055","npc":"#00B894","trash":"#FDCB6E","dog":"#74B9FF"};
+var tierNames = {"solid":"夯","top":"顶级","elite":"人上人","npc":"NPC","trash":"拉完了","dog":"狗都不玩"};
+function openEditModal(hand, tier) {
+    currentEditHand = hand;
+    currentEditTier = tier;
+    selectedTier = tier;
+    document.getElementById("modalHand").textContent = hand;
+    var container = document.getElementById("modalOptions");
+    container.innerHTML = "";
+    var tiers = ["solid","top","elite","npc","trash","dog"];
+    for (var t = 0; t < tiers.length; t++) {
+        var name = tierNames[tiers[t]];
+        var color = tierColors[tiers[t]];
+        var div = document.createElement("div");
+        div.className = "modal-option" + (tiers[t] === selectedTier ? " selected" : "");
+        div.style.color = (tiers[t] === "trash") ? "#FDCB6E" : color;
+        div.setAttribute("data-tier", tiers[t]);
+        div.innerHTML = '<div class="dot" style="background:' + color + ';"></div><span>' + name + '</span>';
+        div.addEventListener("click", function() {
+            selectedTier = this.getAttribute("data-tier");
+            document.querySelectorAll(".modal-option").forEach(function(o) { o.classList.remove("selected"); });
+            this.classList.add("selected");
+        });
+        container.appendChild(div);
+    }
+    document.getElementById("editModal").classList.add("show");
+}
+function closeEditModal() {
+    document.getElementById("editModal").classList.remove("show");
+    currentEditHand = null;
+    selectedTier = null;
+}
+document.getElementById("btnCancel").addEventListener("click", closeEditModal);
+document.getElementById("editModal").addEventListener("click", function(e) {
+    if (e.target === this) closeEditModal();
+});
+document.getElementById("btnSave").addEventListener("click", function() {
+    if (!currentEditHand || !selectedTier) return;
+    // Remove from old tier
+    for (var t in tierMap) {
+        var idx = tierMap[t].indexOf(currentEditHand);
+        if (idx !== -1) { tierMap[t].splice(idx, 1); break; }
+    }
+    // Add to new tier
+    if (!tierMap[selectedTier]) tierMap[selectedTier] = [];
+    tierMap[selectedTier].push(currentEditHand);
+    // Rebuild reverse lookup
+    for (var k in handToTier) delete handToTier[k];
+    for (var nt in tierMap) {
+        tierMap[nt].forEach(function(h) { handToTier[h] = nt; });
+    }
+    // Recompute counts
+    for (var ct in counts) delete counts[ct];
+    for (var mt in tierMap) { counts[mt] = tierMap[mt].length; }
+    counts["dog"] = 0;
+    for (var i = 0; i < 13; i++) {
+        for (var j = 0; j < 13; j++) {
+            var dh;
+            if (i === j) dh = RANKS[i] + RANKS[i];
+            else { var dbk = sortedHandKey(RANKS[i], RANKS[j]); dh = dbk + ((j > i) ? "s" : "o"); }
+            if (!handToTier[dh]) counts["dog"]++;
+        }
+    }
+    renderTable();
+    closeEditModal();
+});
+renderTable();
+</script>
+</body>
+</html>
