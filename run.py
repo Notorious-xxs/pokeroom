@@ -26,26 +26,37 @@ def allowed_file(filename):
 # 加载YOLO模型
 # ============================================================
 MODEL_PATH = 'yolov8m_synthetic.pt'
-try:
-    model = YOLO(MODEL_PATH)
-    print(f"✅ 模型加载成功: {MODEL_PATH}")
-except Exception as e:
-    print(f"❌ 模型加载失败: {e}")
-    model = None
+_model = None
+
+
+def get_model():
+    """懒加载 YOLO 模型，避免容器启动超时"""
+    global _model
+    if _model is None:
+        print(f"🔄 首次请求，正在加载模型: {MODEL_PATH}")
+        try:
+            _model = YOLO(MODEL_PATH)
+            print(f"✅ 模型加载完成: {MODEL_PATH}")
+        except Exception as e:
+            print(f"❌ 模型加载失败: {e}")
+            raise
+    return _model
 
 
 # ============================================================
 # 主识别函数：YOLO 识别 + 去重 + 手牌/公共牌分离
 # ============================================================
 def detect_cards_yolo(image_path):
-    if model is None:
+    try:
+        _model = get_model()
+    except Exception:
         return {'community': [], 'hand': []}
 
     print(f"🔍 开始YOLO识别: {image_path}")
     start_time = time.time()
 
     try:
-        results = model(image_path, conf=0.02, iou=0.4, verbose=False)
+        results = _model(image_path, conf=0.02, iou=0.4, verbose=False)
         # results = model(
         #     image_path,
         #     conf=0.3,  # 提高到0.3，过滤低置信度
