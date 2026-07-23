@@ -1,12 +1,9 @@
 # 腾讯云托管启动入口
-import sys
 import os
 
 import os
-import cv2
 import time
 import random
-import math
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
